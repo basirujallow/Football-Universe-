@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Universe: FCM/FTM Pro</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-green: #22c55e;
+            --accent-blue: #38bdf8;
+            --accent-gold: #eab308;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 10px; }
+        .app-container { max-width: 900px; margin: auto; background: var(--card-bg); padding: 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h1, h2, h3, h4 { text-align: center; margin: 6px 0; color: var(--accent-green); }
+
+        .nav-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; border-bottom: 2px solid #334155; padding-bottom: 6px; }
+        .tab-btn { background: #334155; color: var(--text-main); border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; font-weight: bold; font-size: 0.85rem; }
+        .tab-btn.active { background: var(--accent-green); color: #000; }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 10px 0; }
+        button.action-btn { background: var(--accent-green); color: #000; border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; transition: transform 0.1s; }
+        button.action-btn:active { transform: scale(0.98); }
+        .btn-gold { background: var(--accent-gold); color: #000; }
+        .btn-blue { background: var(--accent-blue); color: #000; }
+        .btn-purple { background: var(--accent-purple); color: #fff; }
+        .btn-red { background: var(--accent-red); color: #fff; }
+
+        .scoreboard { background: #0f172a; padding: 12px; border-radius: 8px; text-align: center; font-size: 1.2rem; font-weight: bold; margin: 10px 0; border: 1px solid #334155; }
+        
+        .pitch { background: #15803d; border: 2px solid #fff; height: 110px; border-radius: 8px; position: relative; margin: 10px 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .pitch-line { position: absolute; width: 50%; height: 100%; border-right: 2px solid rgba(255,255,255,0.5); left: 0; }
+        .center-circle { position: absolute; width: 40px; height: 40px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; }
+        .ball { width: 12px; height: 12px; background: #fff; border-radius: 50%; position: absolute; transition: all 0.5s ease-in-out; box-shadow: 0 0 6px #000; }
+
+        .commentary-box { background: #090d16; padding: 10px; border-left: 4px solid var(--accent-green); height: 110px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; margin: 10px 0; border-radius: 0 6px 6px 0; }
+        .list-box { list-style: none; padding: 0; margin: 0; }
+        .list-box li { background: #334155; margin: 5px 0; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; }
+
+        select { width: 100%; padding: 10px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 6px; margin: 6px 0 12px 0; font-size: 0.9rem; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
+        th, td { padding: 8px; text-align: center; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; color: var(--accent-blue); }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .stat-badge { background: #0f172a; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        
+        .loading { text-align: center; color: var(--accent-blue); font-weight: bold; }
+        .player-stat-box { background: #0f172a; padding: 10px; margin: 8px 0; border-radius: 6px; border-left: 3px solid var(--accent-blue); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- HOME SCREEN: CAREER & TEAM/PLAYER SELECTION -->
+    <div id="screen-menu" class="screen active">
+        <h1>⚽ Football Universe</h1>
+        <p style="text-align: center; color: var(--text-muted); font-size:0.9rem;">FCM26 & FTM25 Style Club & Player Setup</p>
+        
+        <h3>1. Select Career Path</h3>
+        <div class="grid-2">
+            <button class="action-btn" id="btn-role-Manager" onclick="selectRole('Manager')">👔 Manager</button>
+            <button class="action-btn btn-gold" id="btn-role-Director" onclick="selectRole('Director')">💼 Chairman / Director</button>
+            <button class="action-btn btn-blue" id="btn-role-Player" onclick="selectRole('Player')">⚽ Be a Player</button>
+            <button class="action-btn btn-purple" id="btn-role-Intl" onclick="selectRole('Intl')">🌍 National Boss</button>
+        </div>
+
+        <div style="background:#0f172a; padding:14px; border-radius:8px; margin-top:14px;">
+            <h3>2. Choose League & Team</h3>
+            
+            <label>League Division</label>
+            <select id="select-league" onchange="populateTeams()">
+                <option value="tier1">Tier 1: Premier League</option>
+                <option value="tier2">Tier 2: Championship</option>
+                <option value="tier3">Tier 3: League One</option>
+            </select>
+
+            <label>Select Club</label>
+            <select id="select-team" onchange="populatePlayers()"></select>
+
+            <div id="player-select-container" style="display:none;">
+                <label>Select Player to Play As</label>
+                <select id="select-player"></select>
+            </div>
+
+            <button class="action-btn btn-gold" style="margin-top:10px;" onclick="confirmCareerStart()">🚀 Start Career</button>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="screen-dashboard" class="screen">
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('match')">Matchday</button>
+            <button class="tab-btn" onclick="switchTab('table')">Standings</button>
+            <button class="tab-btn" onclick="switchTab('squad')">Squad Roster</button>
+            <button class="tab-btn" onclick="switchTab('player')" id="player-tab" style="display:none;">📊 My Player</button>
+            <button class="tab-btn" onclick="switchTab('trophies')">🏆 Trophies</button>
+            <button class="tab-btn" onclick="switchTab('bank')">Finance & Loans</button>
+        </div>
+
+        <!-- TAB: MATCHDAY -->
+        <div id="tab-match" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span id="role-badge" class="stat-badge" style="color:var(--accent-gold);">Role: Manager</span>
+                <span id="calendar-badge" class="stat-badge">Tier 1 | Year: 2026</span>
+                <span id="match-badge" class="stat-badge" style="color:var(--accent-blue);">Matches: 0</span>
+            </div>
+
+            <div class="scoreboard">
+                <span id="home-name">London Red</span>
+                <span id="live-score" style="margin: 0 10px; color: var(--accent-green);">0 - 0</span>
+                <span id="away-name">Madrid White</span>
+            </div>
+
+            <!-- 2D PITCH -->
+            <div class="pitch">
+                <div class="pitch-line"></div>
+                <div class="center-circle"></div>
+                <div class="ball" id="match-ball" style="left: 50%; top: 50%;"></div>
+            </div>
+
+            <!-- MATCH CONTROLS (FCM/FTM STYLE) -->
+            <div class="grid-2">
+                <button class="action-btn" id="btn-play-live" onclick="simulateMatch(false)">▶ Play Live Match</button>
+                <button class="action-btn btn-purple" id="btn-skip-match" onclick="simulateMatch(true)">⏩ Skip Match (Instant Result)</button>
+            </div>
+
+            <div class="commentary-box" id="commentary-log">
+                <div style="color: var(--text-muted);">Match events stream here...</div>
+            </div>
+
+            <button class="action-btn btn-gold" onclick="advanceSeason()">📅 Advance Season (+1 Year & Aging)</button>
+        </div>
+
+        <!-- TAB: LEAGUE TABLE -->
+        <div id="tab-table" class="tab-content" style="display:none;">
+            <h3>League Standings</h3>
+            <table>
+                <thead>
+                    <tr><th>Pos</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>PTS</th></tr>
+                </thead>
+                <tbody id="league-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- TAB: SQUAD -->
+        <div id="tab-squad" class="tab-content" style="display:none;">
+            <h3>Squad Roster</h3>
+            <ul class="list-box" id="squad-list"></ul>
+        </div>
+
+        <!-- TAB: PLAYER CAREER -->
+        <div id="tab-player" class="tab-content" style="display:none;">
+            <h3>📊 Player Career Stats</h3>
+            <div class="player-stat-box">
+                <div><b id="player-name">Player Name</b></div>
+                <div id="player-career-stats"></div>
+            </div>
+        </div>
+
+        <!-- TAB: TROPHIES -->
+        <div id="tab-trophies" class="tab-content" style="display:none;">
+            <h3>🏆 Honors & Cabinet</h3>
+            <ul class="list-box">
+                <li><span>League Titles Won:</span> <b id="trophy-league" style="color:var(--accent-gold);">0</b></li>
+            </ul>
+        </div>
+
+        <!-- TAB: FINANCES -->
+        <div id="tab-bank" class="tab-content" style="display:none;">
+            <h3>Finances & Loans</h3>
+            <p>Club Balance: <b id="transfer-budget" style="color:var(--accent-green);">$25,000,000</b></p>
+            <button class="action-btn btn-gold" onclick="takeLoan()">Take $5M Bank Loan</button>
+        </div>
+
+        <button class="action-btn btn-red" style="margin-top:16px;" onclick="resetCareer()">Exit Career</button>
+    </div>
+
+</div>
+
+<script>
+    // LEAGUE & CLUB DATABASE (FCM / FTM STYLE)
+    const leagueDatabase = {
+        tier1: [
+            { name: "London Red", attack: 90, defense: 85, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "K. Mbappi", pos:"FWD", age:25, attack:94, stats:{goals:0, assists:0, appearances:0}}, {name: "B. Fernandes", pos:"MID", age:29, attack:86, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Manchester Blue", attack: 92, defense: 88, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "E. Halaand", pos:"FWD", age:24, attack:93, stats:{goals:0, assists:0, appearances:0}}, {name: "K. De Bruyn", pos:"MID", age:33, attack:90, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Madrid White", attack: 89, defense: 86, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "V. Junior", pos:"FWD", age:24, attack:91, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Munich Red", attack: 87, defense: 84, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "H. Kane", pos:"FWD", age:31, attack:89, stats:{goals:0, assists:0, appearances:0}}] }
+        ],
+        tier2: [
+            { name: "Leicester Blue", attack: 78, defense: 75, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "J. Vardy", pos:"FWD", age:37, attack:77, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Leeds White", attack: 76, defense: 73, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "G. Rutter", pos:"FWD", age:22, attack:76, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Southampton Red", attack: 75, defense: 72, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "A. Armstrong", pos:"FWD", age:27, attack:75, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Sunderland Red", attack: 74, defense: 71, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "J. Bellingham", pos:"MID", age:19, attack:74, stats:{goals:0, assists:0, appearances:0}}] }
+        ],
+        tier3: [
+            { name: "Wrexham Green", attack: 68, defense: 66, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "P. Mullin", pos:"FWD", age:29, attack:70, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Charlton Athletic", attack: 66, defense: 64, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "A. May", pos:"FWD", age:26, attack:67, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Bolton Wanderers", attack: 65, defense: 63, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "D. Charles", pos:"FWD", age:28, attack:66, stats:{goals:0, assists:0, appearances:0}}] },
+            { name: "Reading Blue", attack: 64, defense: 62, pts: 0, matches: 0, wins: 0, draws: 0, losses: 0, squad: [{name: "S. Smith", pos:"FWD", age:23, attack:65, stats:{goals:0, assists:0, appearances:0}}] }
+        ]
+    };
+
+    let selectedRole = "Manager";
+    let selectedClub = null;
+    let selectedPlayer = null;
+    let activeLeague = [];
+    let currentYear = 2026;
+    let bankBalance = 25000000;
+    let trophies = 0;
+    let currentTier = "tier1";
+
+    // INITIALIZATION & LOCAL STORAGE
+    window.onload = function() {
+        loadCareerData();
+        populateTeams();
+    };
+
+    function saveCareerData() {
+        const data = {
+            selectedRole, selectedClub: selectedClub?.name, selectedPlayer: selectedPlayer?.name,
+            currentYear, bankBalance, trophies, currentTier, activeLeague
+        };
+        localStorage.setItem('footballCareer', JSON.stringify(data));
+    }
+
+    function loadCareerData() {
+        const saved = localStorage.getItem('footballCareer');
+        if (saved) {
+            const data = JSON.parse(saved);
+            selectedRole = data.selectedRole;
+            currentYear = data.currentYear;
+            bankBalance = data.bankBalance;
+            trophies = data.trophies;
+            currentTier = data.currentTier;
+        }
+    }
+
+    function selectRole(role) {
+        selectedRole = role;
+        document.querySelectorAll('#screen-menu .action-btn').forEach(b => b.style.outline = "none");
+        document.getElementById(`btn-role-${role}`).style.outline = "3px solid white";
+        
+        const playerContainer = document.getElementById('player-select-container');
+        playerContainer.style.display = (role === 'Player') ? 'block' : 'none';
+    }
+
+    function populateTeams() {
+        const tier = document.getElementById('select-league').value;
+        currentTier = tier;
+        const teamSelect = document.getElementById('select-team');
+        teamSelect.innerHTML = "";
+
+        leagueDatabase[tier].forEach((club, idx) => {
+            teamSelect.innerHTML += `<option value="${idx}">${club.name}</option>`;
+        });
+
+        populatePlayers();
+    }
+
+    function populatePlayers() {
+        const tier = document.getElementById('select-league').value;
+        const teamIdx = document.getElementById('select-team').value;
+        const playerSelect = document.getElementById('select-player');
+        playerSelect.innerHTML = "";
+
+        const club = leagueDatabase[tier][teamIdx];
+        if (club && club.squad) {
+            club.squad.forEach((p, idx) => {
+                playerSelect.innerHTML += `<option value="${idx}">${p.name} (${p.pos} - OVR: ${p.attack})</option>`;
+            });
+        }
+    }
+
+    function confirmCareerStart() {
+        const tier = document.getElementById('select-league').value;
+        const teamIdx = document.getElementById('select-team').value;
+        const playerIdx = document.getElementById('select-player').value;
+
+        activeLeague = leagueDatabase[tier];
+        selectedClub = activeLeague[teamIdx];
+        
+        if (selectedRole === 'Player') {
+            selectedPlayer = selectedClub.squad[playerIdx];
+            document.getElementById('player-tab').style.display = 'block';
+        } else {
+            document.getElementById('player-tab').style.display = 'none';
+        }
+
+        document.getElementById('screen-menu').classList.remove('active');
+        document.getElementById('screen-dashboard').classList.add('active');
+        document.getElementById('role-badge').innerText = `Role: ${selectedRole}`;
+        document.getElementById('calendar-badge').innerText = `${getTierName(tier)} | Year: ${currentYear}`;
+        
+        renderSquad();
+        renderTable();
+        saveCareerData();
+    }
+
+    function getTierName(tier) {
+        const map = { tier1: 'Tier 1 (Premier)', tier2: 'Tier 2 (Championship)', tier3: 'Tier 3 (League One)' };
+        return map[tier] || tier;
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(`tab-${tabId}`).style.display = 'block';
+        event.target.classList.add('active');
+
+        if (tabId === 'player' && selectedPlayer) {
+            renderPlayerStats();
+        }
+    }
+
+    // IMPROVED MATCH SIMULATOR WITH BETTER LOGIC
+    function simulateMatch(instantSkip) {
+        document.getElementById('btn-play-live').disabled = true;
+        document.getElementById('btn-skip-match').disabled = true;
+
+        const log = document.getElementById('commentary-log');
+        const ball = document.getElementById('match-ball');
+        log.innerHTML = '<div class="loading">⏳ Match in progress...</div>';
+
+        let opponent = activeLeague.find(c => c.name !== selectedClub.name) || activeLeague[1];
+
+        // BETTER MATCH LOGIC: Defense reduces opponent goals
+        let homeGoals = Math.max(0, Math.floor(Math.random() * 4) + Math.floor(selectedClub.attack / 30) - Math.floor(opponent.defense / 40));
+        let awayGoals = Math.max(0, Math.floor(Math.random() * 3) + Math.floor(opponent.attack / 30) - Math.floor(selectedClub.defense / 40));
+
+        selectedClub.matches++;
+        opponent.matches++;
+
+        if (homeGoals > awayGoals) {
+            selectedClub.pts += 3;
+            selectedClub.wins++;
+            opponent.losses++;
+        } else if (homeGoals === awayGoals) {
+            selectedClub.pts += 1;
+            opponent.pts += 1;
+            selectedClub.draws++;
+            opponent.draws++;
+        } else {
+            opponent.pts += 3;
+            selectedClub.losses++;
+            opponent.wins++;
+        }
+
+        // Update player stats if in player mode
+        if (selectedRole === 'Player' && selectedPlayer) {
+            selectedPlayer.stats.appearances++;
+            selectedPlayer.stats.goals += Math.random() > 0.7 ? 1 : 0;
+            selectedPlayer.stats.assists += Math.random() > 0.8 ? 1 : 0;
+        }
+
+        if (instantSkip) {
+            // INSTANT RESULT
+            log.innerHTML = `<div><strong>90' [INSTANT]</strong><br>Full Time!<br><b>${selectedClub.name} ${homeGoals} - ${awayGoals} ${opponent.name}</b></div>`;
+            document.getElementById('live-score').innerText = `${homeGoals} - ${awayGoals}`;
+            document.getElementById('match-badge').innerText = `Matches: ${selectedClub.matches}`;
+            renderTable();
+            setTimeout(() => {
+                document.getElementById('btn-play-live').disabled = false;
+                document.getElementById('btn-skip-match').disabled = false;
+            }, 500);
+        } else {
+            // LIVE 2D SIMULATION
+            let timeline = [
+                { min: 15, pos: "30%", text: "⚽ Midfield battle..." },
+                { min: 32, pos: "75%", text: `🎯 ${selectedClub.name} pressing hard...` },
+                { min: 45, pos: "80%", text: `🔴 GOAL! ${selectedClub.name} ${homeGoals} - ${awayGoals}!` },
+                { min: 67, pos: "25%", text: `⚠️ ${opponent.name} counter attack...` },
+                { min: 88, pos: "50%", text: "⏱️ Final whistle blows!" }
+            ];
+
+            let delay = 0;
+            timeline.forEach(item => {
+                setTimeout(() => {
+                    ball.style.left = item.pos;
+                    log.innerHTML += `<div><strong>${item.min}'</strong> ${item.text}</div>`;
+                    document.getElementById('live-score').innerText = `${homeGoals} - ${awayGoals}`;
+                    log.scrollTop = log.scrollHeight;
+                }, delay);
+                delay += 1200;
+            });
+
+            setTimeout(() => {
+                ball.style.left = "50%";
+                document.getElementById('match-badge').innerText = `Matches: ${selectedClub.matches}`;
+                renderTable();
+                document.getElementById('btn-play-live').disabled = false;
+                document.getElementById('btn-skip-match').disabled = false;
+            }, delay);
+        }
+
+        saveCareerData();
+    }
+
+    function renderTable() {
+        activeLeague.sort((a,b) => b.pts - a.pts);
+        const tbody = document.getElementById('league-table-body');
+        tbody.innerHTML = "";
+        activeLeague.forEach((c, idx) => {
+            tbody.innerHTML += `<tr><td>${idx+1}</td><td><b>${c === selectedClub ? '🎯 ' : ''}</b>${c.name}</td><td>${c.matches}</td><td>${c.wins}</td><td>${c.draws}</td><td>${c.losses}</td><td><b style="color:var(--accent-green);">${c.pts}</b></td></tr>`;
+        });
+        document.getElementById('home-name').innerText = selectedClub.name;
+        document.getElementById('away-name').innerText = activeLeague.find(c => c.name !== selectedClub.name).name;
+    }
+
+    function renderSquad() {
+        const list = document.getElementById('squad-list');
+        list.innerHTML = "";
+        selectedClub.squad.forEach(p => {
+            list.innerHTML += `<li><span><b style="color:var(--accent-blue);">[${p.pos}]</b> ${p.name} (Age: ${p.age})</span> <span style="color:var(--accent-gold);">OVR: ${p.attack}</span></li>`;
+        });
+    }
+
+    function renderPlayerStats() {
+        if (!selectedPlayer) return;
+        const stats = selectedPlayer.stats;
+        const html = `
+            <div style="margin-top:10px;">
+                <p>Position: <b>${selectedPlayer.pos}</b> | Age: <b>${selectedPlayer.age}</b></p>
+                <p>Overall Rating: <b style="color:var(--accent-gold);">${selectedPlayer.attack}</b></p>
+                <hr style="border:0; border-top:1px solid #334155; margin:10px 0;">
+                <p>Appearances: <b style="color:var(--accent-blue);">${stats.appearances}</b></p>
+                <p>Goals Scored: <b style="color:var(--accent-green);">${stats.goals}</b></p>
+                <p>Assists: <b style="color:var(--accent-purple);">${stats.assists}</b></p>
+            </div>
+        `;
+        document.getElementById('player-career-stats').innerHTML = html;
+        document.getElementById('player-name').innerText = selectedPlayer.name;
+    }
+
+    function takeLoan() {
+        bankBalance += 5000000;
+        document.getElementById('transfer-budget').innerText = `$${bankBalance.toLocaleString()}`;
+        alert("Took $5,000,000 loan! New balance: $" + bankBalance.toLocaleString());
+        saveCareerData();
+    }
+
+    function advanceSeason() {
+        currentYear++;
+        selectedClub.squad.forEach(p => {
+            p.age += 1;
+            if (p.age > 35) p.attack -= 2; // Aging effect
+        });
+        activeLeague.forEach(c => { c.pts = 0; c.matches = 0; c.wins = 0; c.draws = 0; c.losses = 0; });
+        
+        document.getElementById('calendar-badge').innerText = `${getTierName(currentTier)} | Year: ${currentYear}`;
+        renderSquad();
+        renderTable();
+        alert(`✅ Advanced to Year ${currentYear}! Season reset and players aged. Veteran players decline faster.`);
+        saveCareerData();
+    }
+
+    function resetCareer() {
+        if (confirm('Are you sure you want to exit and reset your career?')) {
+            localStorage.removeItem('footballCareer');
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
